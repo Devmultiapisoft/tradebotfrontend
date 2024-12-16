@@ -1,0 +1,90 @@
+/* Sidebar Wrapper */
+.sidebarWrapper {
+  box-shadow: 2px 0 4px -1px rgba(0, 0, 0, 20%), 4px 0 5px 0 rgba(0, 0, 0, 14%),
+    1px 0 10px 0 rgba(0, 0, 0, 12%);
+}
+
+/* Desktop Sidebar */
+.desktop-sidebar {
+  width: 280px;
+  height: 100vh;
+  background-color: #000000;
+  box-shadow: 2px 0 8px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  /* position: fixed; */
+  top: 0;
+  left: 0;
+}
+
+/* Mobile Sidebar */
+.mobile-sidebar {
+  background-color: #000000;
+}
+
+/* Sidebar Content */
+.sidebar-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Menu Item Styles */
+.menu-item {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #4b5563;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.menu-item:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.active-menu {
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+
+/* Menu Icon and Text */
+.menu-icon {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  color: inherit;
+}
+
+.menu-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: inherit;
+}
+
+/* Responsive Styles */
+@media (max-width: 767px) {
+  /* Mobile Sidebar */
+  .desktop-sidebar {
+    display: none;
+  }
+
+  .mobile-sidebar {
+    display: block;
+  }
+}
+
+/* Larger screens - Desktop Sidebar */
+@media (min-width: 768px) {
+  .mobile-sidebar {
+    display: none;
+  }
+
+  .desktop-sidebar {
+    display: block;
+  }
+}
