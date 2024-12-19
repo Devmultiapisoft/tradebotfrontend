@@ -1,29 +1,38 @@
-import React, { useRef } from "react";
-
+import React, { useRef, useEffect, useState } from "react";
 import "../assets/css/header.css";
-
 import Logo from "../assets/images/logo.png";
 import Avatar from "../assets/images/avatar.jpg";
 import { DashboardIcon } from "../assets/icons";
-
 import { useDispatch } from "react-redux";
 import { openSideBar } from "../library/store/sidebar";
 import { Badge } from "primereact/badge";
-
 import { Menu } from "primereact/menu";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { useHistory } from "react-router-dom";
+import { jwtDecode } from "jwt-decode"; // Correct import
 
 export default function Header() {
   const history = useHistory();
   const userMenuRef = useRef(null);
   const notificationRef = useRef(null);
-
   const dispatch = useDispatch();
+
+  const [user, setUser] = useState(null);
+
+  // Decode token to get user data
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    console.log(token)
+    if (token) {
+      const decodedToken = jwtDecode(token); // Correct usage of jwtDecode
+      console.log(decodedToken)
+      setUser(decodedToken); // Assuming the user data is in the 'user' key of the decoded token
+    }
+  }, []);
 
   const userMenu = [
     {
-      label: "Hi, User",
+      label: `Hi, ${user?.name || "User"}`, // Show username or "User" if not available
       items: [
         {
           label: "Home",
@@ -54,9 +63,7 @@ export default function Header() {
   const togglePanel = (e, ref) => {
     e.preventDefault();
     e.stopPropagation();
-
     document.querySelector(".emptyBoxForMenuClick").click();
-
     ref.current.toggle(e);
   };
 

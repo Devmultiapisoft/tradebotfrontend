@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {jwtDecode} from "jwt-decode"; // Correct import
 
 export default function TradingPage() {
   // State for trading parameters
@@ -6,19 +8,70 @@ export default function TradingPage() {
   const [lowerTarget, setLowerTarget] = useState("");
   const [sellAmount, setSellAmount] = useState("");
   const [currentPrice, setCurrentPrice] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Simulate fetching price (replace with real API calls)
-  const fetchCurrentPrice = () => {
-    const simulatedPrice = (Math.random() * 10 + 0.5).toFixed(6); // Simulated price
-    setCurrentPrice(simulatedPrice);
+  // Fetch the current price from the backend
+  const fetchCurrentPrice = async () => {
+    setLoading(true); // Start loading
+    try {
+      const response = await axios.get("http://localhost:5000/api/bot/current-price"); // Backend endpoint for current price
+      setCurrentPrice(response.data.price); // Assuming the response has 'price' field
+    } catch (error) {
+      console.error("Error fetching price:", error);
+      alert("Failed to fetch current price");
+    } finally {
+      setLoading(false); // Stop loading
+    }
   };
 
-  const handleSubmit = (e) => {
+  // Fetch trading parameters from the backend
+  const fetchTradingParameters = async () => {
+    if (user) {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/bot/trading-parameters/${user.id}`);
+        setUpperTarget(response.data.targetPrice || "");
+        setLowerTarget(response.data.lowerTargetPrice || "");
+        setSellAmount(response.data.sellAmountUSD || "");
+      } catch (error) {
+        console.error("Error fetching trading parameters:", error);
+        alert("Failed to fetch trading parameters");
+      }
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setUser(decodedToken); // Assuming the user data is in the 'user' key of the decoded token
+    }
+  }, []);
+
+  // Fetch trading parameters after user is set
+  useEffect(() => {
+    if (user) {
+      fetchTradingParameters();
+    }
+  }, [user]);
+
+  // Handle the form submission and send data to the backend
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Trading parameters set:
-    Upper Target: ${upperTarget}
-    Lower Target: ${lowerTarget}
-    Sell Amount in USD: ${sellAmount}`);
+    const tradingParams = {
+      targetPrice: upperTarget,
+      lowerTargetPrice: lowerTarget,
+      sellAmountUSD: sellAmount,
+      userid: user.id,
+    };
+
+    try {
+      await axios.post("http://localhost:5000/api/bot/trading-parameters", tradingParams); // Backend endpoint for trading parameters
+      alert("Trading parameters have been set!");
+    } catch (error) {
+      console.error("Error submitting trading parameters:", error);
+      alert("Failed to set trading parameters.");
+    }
   };
 
   return (
@@ -48,8 +101,9 @@ export default function TradingPage() {
             cursor: "pointer",
           }}
           onClick={fetchCurrentPrice}
+          disabled={loading} // Disable button while loading
         >
-          Refresh Price
+          {loading ? "Refreshing Price..." : "Refresh Price"}
         </button>
       </div>
 

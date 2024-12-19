@@ -9,6 +9,6 @@ export const store = configureStore({
   reducer: {
     sidebar: SideBarReducer,
     toast: ToastReducer,
-    // authentication: AuthenticationReducer,
+    authentication: AuthenticationReducer,
   },
 });

@@ -1,52 +1,59 @@
 import React, { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { useHistory } from "react-router-dom";
+import { useFormik, FormikProvider } from "formik";
+import * as Yup from "yup";
+import { authenticateUser } from "../library/store/authentication";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
 import { Button } from "primereact/button";
 import { classNames } from "primereact/utils";
 import "../assets/css/login.css";
-
-import * as Yup from "yup";
-import { useFormik, Form, FormikProvider } from "formik";
-import { Link } from "react-router-dom";
-import { useHistory } from "react-router-dom";
-
-import { CheckToken } from "../library/helper";
-import { authenticateUser } from "../library/store/authentication";
-import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom/cjs/react-router-dom.min";
 
 export default function LoginPage() {
   const history = useHistory();
   const dispatch = useDispatch();
 
+  // Yup validation schema for login
   const LoginSchema = Yup.object().shape({
-    userid: Yup.string().required("name is required"),
-    password: Yup.string().required("password is required"),
+    userid: Yup.string().required("User ID is required"),
+    password: Yup.string().required("Password is required"),
   });
 
-  useEffect(() => {
-    if (CheckToken()) {
-      // history.push("/dashboard");
-    }
-  }, []);
-
+  // Formik hook
   const formik = useFormik({
     initialValues: {
       userid: "",
       password: "",
     },
     validationSchema: LoginSchema,
-    onSubmit: (data) => {
-      // console.log(data);
-      // dispatch(authenticateUser(data));
-
-      // setTimeout(() => {
-      //   formik.setSubmitting(false);
-      // }, 2000);
-      history.push("/dashboard");
+    onSubmit: async (data, { setSubmitting, setFieldError }) => {
+      try {
+        // Dispatch login user action
+        const response = await dispatch(authenticateUser(data)).unwrap();
+        
+        if (response.success) {
+          const { token } = response;
+          localStorage.setItem("token", token);  // Save token in localStorage
+          
+          // After login is successful, redirect to dashboard
+          // Make sure history.push is executed after state is updated
+          history.push("/dashboard");
+          window.location.href = "/dashboard";
+        } else {
+          setFieldError("password", response.message || "Invalid credentials");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        setFieldError("password", "Login failed. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
-  const { errors, touched, isSubmitting, handleSubmit } = formik;
+  const { errors, touched, isSubmitting, handleSubmit, handleChange, values } = formik;
 
   return (
     <div className="form-box">
@@ -55,29 +62,29 @@ export default function LoginPage() {
           <h4 className="text-center">Sign in to App</h4>
           <p className="text-center mb-3">Enter your details below.</p>
           <FormikProvider value={formik}>
-            <Form onSubmit={handleSubmit} className="p-fluid">
+            <form onSubmit={handleSubmit} className="p-fluid">
               <div className="p-field">
                 <span className="p-float-label">
                   <InputText
                     id="userid"
                     name="userid"
-                    value={formik.values.userid}
-                    onChange={formik.handleChange}
+                    value={values.userid}
+                    onChange={handleChange}
                     className={classNames({
-                      "p-invalid": Boolean(touched.userid && errors.userid),
+                      "p-invalid": touched.userid && errors.userid,
                     })}
                   />
                   <label
-                    htmlFor="name"
+                    htmlFor="userid"
                     className={classNames({
-                      "p-error": Boolean(touched.userid && errors.userid),
+                      "p-error": touched.userid && errors.userid,
                     })}
                   >
                     User ID*
                   </label>
                 </span>
-                {Boolean(touched.userid && errors.userid) && (
-                  <small className="p-error">{formik.errors["userid"]}</small>
+                {touched.userid && errors.userid && (
+                  <small className="p-error">{errors.userid}</small>
                 )}
               </div>
 
@@ -88,23 +95,23 @@ export default function LoginPage() {
                     name="password"
                     toggleMask
                     feedback={false}
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
+                    value={values.password}
+                    onChange={handleChange}
                     className={classNames({
-                      "p-invalid": Boolean(touched.password && errors.password),
+                      "p-invalid": touched.password && errors.password,
                     })}
                   />
                   <label
                     htmlFor="password"
                     className={classNames({
-                      "p-error": Boolean(touched.password && errors.password),
+                      "p-error": touched.password && errors.password,
                     })}
                   >
                     Password*
                   </label>
                 </span>
-                {Boolean(touched.password && errors.password) && (
-                  <small className="p-error">{formik.errors["password"]}</small>
+                {touched.password && errors.password && (
+                  <small className="p-error">{errors.password}</small>
                 )}
               </div>
 
@@ -128,7 +135,7 @@ export default function LoginPage() {
               <div className="signupBox mt-3 text-center">
                 Don’t have an account? <Link to="/register">Get started</Link>
               </div>
-            </Form>
+            </form>
           </FormikProvider>
         </div>
       </div>

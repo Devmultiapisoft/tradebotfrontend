@@ -1,3 +1,5 @@
-// export const baseUrl = "http://sample.dev.in:8001/api/v1/web/";
+// Assuming your backend is running locally on port 5000, update accordingly.
+export const baseUrl = "http://localhost:5000/api"; // or the actual backend URL
 
-// export const loginUrl = baseUrl + "login";
+// Combine with the login endpoint
+export const loginUrl = `${baseUrl}/user/login`; // Assuming '/users/login' is the login endpoint on your backend
