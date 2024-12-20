@@ -10,7 +10,7 @@ import botImage from "../assets/images/bot.png"; // Placeholder bot image
 // Register Chart.js components
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
-const socket = io("http://localhost:5001", { 
+const socket = io("http://134.209.149.151:5001", { 
   reconnection: true,  // Allow auto reconnection
   reconnectionAttempts: Infinity,  // Unlimited reconnection attempts
   reconnectionDelay: 1000,  // Reconnect every 1 second if disconnected
@@ -101,7 +101,7 @@ export default function TradingPage() {
   // Start bot function
   const startBot = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/bot/start"); // Adjust URL as needed
+      const response = await axios.post("http://134.209.149.151:5000/api/bot/start"); // Adjust URL as needed
       console.log("Bot started:", response.data);
       setBotRunning(true);
 
@@ -126,7 +126,7 @@ export default function TradingPage() {
   // Stop bot function
   const stopBot = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/bot/stop"); // Adjust URL as needed
+      const response = await axios.post("http://134.209.149.151:5000/api/bot/stop"); // Adjust URL as needed
       console.log("Bot stopped:", response.data);
       setBotRunning(false);
 

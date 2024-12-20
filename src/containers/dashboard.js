@@ -54,7 +54,7 @@ export default function DashboardPage() {
   // Fetch current price and update chart data
   const fetchPriceData = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/bot/current-price"); // Use env variable for flexibility
+      const response = await axios.get("http://134.209.149.151:5000/api/bot/current-price"); // Use env variable for flexibility
       const { price} = response.data;
 
       if (price ) {

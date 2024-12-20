@@ -66,7 +66,7 @@ export default function SettingPage() {
   const fetchCurrentPrice = async () => {
     setLoading(true); // Start loading
     try {
-      const response = await axios.get("http://localhost:5000/api/bot/current-price"); // Backend endpoint for current price
+      const response = await axios.get("http://134.209.149.151:5000/api/bot/current-price"); // Backend endpoint for current price
       setCurrentPrice(response.data.price); // Assuming the response has 'price' field
     } catch (error) {
       console.error("Error fetching price:", error);
@@ -80,7 +80,7 @@ export default function SettingPage() {
   const fetchTradingParameters = async () => {
     if (user) {
       try {
-        const response = await axios.get(`http://localhost:5000/api/bot/trading-parameters/${user.id}`);
+        const response = await axios.get(`http://134.209.149.151:5000/api/bot/trading-parameters/${user.id}`);
         setUpperTarget(response.data.targetPrice || "");
         setLowerTarget(response.data.lowerTargetPrice || "");
         setSellAmount(response.data.sellAmountUSD || "");
@@ -123,7 +123,7 @@ export default function SettingPage() {
     };
 
     try {
-      await axios.post("http://localhost:5000/api/bot/trading-parameters", tradingParams); // Backend endpoint for trading parameters
+      await axios.post("http://134.209.149.151:5000/api/bot/trading-parameters", tradingParams); // Backend endpoint for trading parameters
       alert("Trading parameters have been set!");
     } catch (error) {
       console.error("Error submitting trading parameters:", error);

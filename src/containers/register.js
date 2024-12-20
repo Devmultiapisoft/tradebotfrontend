@@ -35,7 +35,7 @@ export default function RegisterPage() {
     onSubmit: async (data) => {
       try {
         const response = await axios.post(
-          "http://localhost:5000/api/user/register", // Your backend register endpoint
+          "http://134.209.149.151:5000/api/user/register", // Your backend register endpoint
           data
         );
         console.log(response.data);
