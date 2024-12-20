@@ -4,6 +4,57 @@
   /* padding-top: 1rem;
   flex: 1 1 0; */
 }
+.dashboard-container {
+  padding: 20px;
+  background: linear-gradient(145deg, #1f2937, #3b82f6);
+  min-height: 100vh;
+  color: #fff;
+}
+
+.dashboard-header {
+  background: #6366f1;
+  padding: 20px 30px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.dashboard-box {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.price {
+  font-size: 24px;
+  font-weight: bold;
+  color: #3b82f6;
+}
+
+.price-change {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.dashboard-chart {
+  margin-top: 40px;
+}
+
+.chart-wrapper {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
 
 .fullpage {
   height: calc(100vh - var(--headerSize));
@@ -16,7 +67,13 @@
 .fullpage.scroll {
   overflow: auto;
 }
-
+.custom-swal-toast {
+  padding: 10px 15px; /* Adjust padding for smaller size */
+  font-size: 14px; /* Set smaller font size */
+  width: 250px; /* Optional: limit width for a more compact toast */
+  border-radius: 8px; /* Optional: round the corners for a smoother look */
+  box-shadow: none; /* Optional: remove shadow for a cleaner design */
+}
 .fullHeight {
   min-height: 100vh;
 }

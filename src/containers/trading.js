@@ -1,176 +1,197 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {jwtDecode} from "jwt-decode"; // Correct import
+import Swal from "sweetalert2"; // SweetAlert2 for notifications
+import { io } from "socket.io-client"; // Socket.IO client
+import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement } from "chart.js"; // Chart.js for visualizations
+import { Line } from "react-chartjs-2"; // React wrapper for Chart.js
+import "../assets/css/TradingPage.css"; // Import custom styles
+import botImage from "../assets/images/bot.png"; // Placeholder bot image
+
+// Register Chart.js components
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+
+const socket = io("http://localhost:5001", { 
+  reconnection: true,  // Allow auto reconnection
+  reconnectionAttempts: Infinity,  // Unlimited reconnection attempts
+  reconnectionDelay: 1000,  // Reconnect every 1 second if disconnected
+  reconnectionDelayMax: 5000,  // Maximum delay of 5 seconds
+  timeout: 5000,  // Connection timeout
+}); // Connect to the Socket.IO server
 
 export default function TradingPage() {
-  // State for trading parameters
-  const [upperTarget, setUpperTarget] = useState("");
-  const [lowerTarget, setLowerTarget] = useState("");
-  const [sellAmount, setSellAmount] = useState("");
-  const [currentPrice, setCurrentPrice] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
-
-  // Fetch the current price from the backend
-  const fetchCurrentPrice = async () => {
-    setLoading(true); // Start loading
-    try {
-      const response = await axios.get("http://localhost:5000/api/bot/current-price"); // Backend endpoint for current price
-      setCurrentPrice(response.data.price); // Assuming the response has 'price' field
-    } catch (error) {
-      console.error("Error fetching price:", error);
-      alert("Failed to fetch current price");
-    } finally {
-      setLoading(false); // Stop loading
-    }
-  };
-
-  // Fetch trading parameters from the backend
-  const fetchTradingParameters = async () => {
-    if (user) {
-      try {
-        const response = await axios.get(`http://localhost:5000/api/bot/trading-parameters/${user.id}`);
-        setUpperTarget(response.data.targetPrice || "");
-        setLowerTarget(response.data.lowerTargetPrice || "");
-        setSellAmount(response.data.sellAmountUSD || "");
-      } catch (error) {
-        console.error("Error fetching trading parameters:", error);
-        alert("Failed to fetch trading parameters");
-      }
-    }
-  };
+  const [botMessage, setBotMessage] = useState("");
+  const [botRunning, setBotRunning] = useState(false); // Track if the bot is running
+  const [priceHistory, setPriceHistory] = useState([]); // Store price data for the chart
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const decodedToken = jwtDecode(token);
-      setUser(decodedToken); // Assuming the user data is in the 'user' key of the decoded token
-    }
+    // Listen for bot messages from the server
+    socket.on("botMessage", (message) => {
+      setBotMessage(message);
+      showNotification(message);
+      setBotRunning(true);
+    });
+
+    // Listen for price updates (if provided)
+    socket.on("priceUpdate", (price) => {
+      setPriceHistory((prevHistory) => [...prevHistory, price]);
+    });
+
+    // Listen for socket reconnection
+    socket.on("connect", () => {
+      console.log("Socket connected");
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    // Initial bot status check (optional if not managed by backend)
+    socket.emit("checkBotStatus"); // Emit event to check bot status
+
+    // Clean up socket connection on unmount
+    return () => {
+      socket.off("botMessage");
+      socket.off("priceUpdate");
+      socket.off("botStatus");
+      socket.disconnect();
+    };
   }, []);
 
-  // Fetch trading parameters after user is set
-  useEffect(() => {
-    if (user) {
-      fetchTradingParameters();
-    }
-  }, [user]);
+  // Function to show toast notifications
+  const showNotification = (message) => {
+    Swal.fire({
+      title: message,
+      toast: true,
+      position: "bottom-left",
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true,
+      icon: "info",
+      background: "#333",
+      color: "#fff",
+    });
+  };
 
-  // Handle the form submission and send data to the backend
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const tradingParams = {
-      targetPrice: upperTarget,
-      lowerTargetPrice: lowerTarget,
-      sellAmountUSD: sellAmount,
-      userid: user.id,
-    };
+  // Chart.js data
+  const chartData = {
+    labels: priceHistory.map((_, index) => index + 1), // Generate labels based on data index
+    datasets: [
+      {
+        label: "Price History",
+        data: priceHistory,
+        fill: false,
+        borderColor: "#4caf50",
+        backgroundColor: "#4caf50",
+        tension: 0.1, // Line smoothing
+      },
+    ],
+  };
 
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { display: true, position: "top", labels: { color: "#fff" } },
+    },
+    scales: {
+      x: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#fff" } },
+      y: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#fff" } },
+    },
+  };
+
+  // Start bot function
+  const startBot = async () => {
     try {
-      await axios.post("http://localhost:5000/api/bot/trading-parameters", tradingParams); // Backend endpoint for trading parameters
-      alert("Trading parameters have been set!");
+      const response = await axios.post("http://localhost:5000/api/bot/start"); // Adjust URL as needed
+      console.log("Bot started:", response.data);
+      setBotRunning(true);
+
+      Swal.fire({
+        icon: "success",
+        title: "Bot Started!",
+        text: "The bot has been successfully started.",
+        showConfirmButton: false,
+        timer: 2000,
+      });
     } catch (error) {
-      console.error("Error submitting trading parameters:", error);
-      alert("Failed to set trading parameters.");
+      console.error("Error starting bot:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "There was an error starting the bot.",
+        showConfirmButton: true,
+      });
+    }
+  };
+
+  // Stop bot function
+  const stopBot = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/bot/stop"); // Adjust URL as needed
+      console.log("Bot stopped:", response.data);
+      setBotRunning(false);
+
+      Swal.fire({
+        icon: "success",
+        title: "Bot Stopped!",
+        text: "The bot has been successfully stopped.",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } catch (error) {
+      console.error("Error stopping bot:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "There was an error stopping the bot.",
+        showConfirmButton: true,
+      });
     }
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ color: "#fff", marginBottom: "20px" }}>User Trading Page</h1>
-
-      {/* Current Price Section */}
-      <div
-        style={{
-          background: "rgb(79 70 229)",
-          padding: "15px",
-          marginBottom: "20px",
-          borderRadius: "8px",
-        }}
-      >
-        <h3>Current Price</h3>
-        <p style={{ fontSize: "18px", color: "#111827" }}>
-          {currentPrice ? `${currentPrice} USDT/UPiT` : "No data available"}
+    <div className="trading-page">
+      {/* Header */}
+      <header className="header gradient-bg">
+        <h1>Trading Bot Dashboard</h1>
+        <p className="status">
+          Bot Status:{" "}
+          <span className={botRunning ? "running" : "stopped"}>
+            {botRunning ? "Running" : "Stopped"}
+          </span>
         </p>
-        <button
-          style={{
-            padding: "10px 20px",
-            background: "rgb(0 188 212)",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-          onClick={fetchCurrentPrice}
-          disabled={loading} // Disable button while loading
-        >
-          {loading ? "Refreshing Price..." : "Refresh Price"}
+      </header>
+
+      {/* Main Content */}
+      <main className="content">
+        <div className="card-container">
+          {/* Live Price Chart */}
+          <div className="chart-card card">
+            <h2>Live Price Chart</h2>
+            <div className="chart-wrapper">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Bot Information */}
+          <div className="info-card card">
+            <h2>Bot Activity</h2>
+            <img src={botImage} alt="Trading Bot" className="bot-image" />
+            <p className="bot-message">
+              Latest Message: {botMessage || "No messages yet."}
+            </p>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <button className="button start-button" onClick={startBot} disabled={botRunning}>
+          Start Bot
         </button>
-      </div>
-
-      {/* Trading Parameters Form */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-        <div>
-          <label style={{ display: "block", marginBottom: "5px" }}>Upper Target Price (USDT):</label>
-          <input
-            type="number"
-            value={upperTarget}
-            onChange={(e) => setUpperTarget(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #D1D5DB",
-            }}
-            required
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: "5px" }}>Lower Target Price (USDT):</label>
-          <input
-            type="number"
-            value={lowerTarget}
-            onChange={(e) => setLowerTarget(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #D1D5DB",
-            }}
-            required
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: "5px" }}>Sell Amount (in USD):</label>
-          <input
-            type="number"
-            value={sellAmount}
-            onChange={(e) => setSellAmount(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #D1D5DB",
-            }}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            padding: "10px 20px",
-            background: "#4F46E5",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Set Trading Parameters
+        <button className="button stop-button" onClick={stopBot} disabled={!botRunning}>
+          Stop Bot
         </button>
-      </form>
+      </footer>
     </div>
   );
 }
